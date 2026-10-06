@@ -1,0 +1,6 @@
+- insert:
+    - id: local-continue-plugin
+      name: '@local/continue-plugin'
+      config:
+        strategy: continue
+        continuePrompt: '继续完成刚才被中断的任务，从已有进度接续，避免重复已完成的内容；对结果不明的操作先核实状态。'

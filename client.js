@@ -18,7 +18,18 @@ window.__ModuleLoader__.load({
 .continue-toast{position:absolute;bottom:calc(100% + 10px);right:0;z-index:31;width:280px;max-width:70vw;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);font-size:12px;line-height:18px;overflow-wrap:anywhere}
 .continue-toast button{float:right;border:0;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;padding:0 0 4px 8px;font:inherit}
 `;
+    // Client methods take positional arguments; the Remote proxy builds the RPC object.
+    async function submitRecovery(commands, sessionId, expectedTurn, t) {
+      if (!commands || typeof commands.execute !== 'function') throw new Error(t('unavailable'));
+      const line = '/continue-session ' + JSON.stringify({ expectedTurn });
+      const response = await commands.execute(sessionId, line, []);
+      if (!response || response.ok !== true) throw new Error(response?.error?.message ?? t('failed'));
+      if (!response.value) throw new Error(t('unavailable'));
+      if (response.value.result?.kind === 'error') throw new Error(response.value.result.text ?? t('failed'));
+      return response.value;
+    }
     return {
+      submitRecovery,
       inject: ['slots', 'locale'],
       apply(ctx) {
         for (const [language, dictionary] of Object.entries(dictionaries)) ctx.effect(() => ctx.locale.register('local-continue', language, dictionary));
@@ -41,12 +52,7 @@ window.__ModuleLoader__.load({
             setBusy(true);
             setError(null);
             try {
-              const commands = ctx.get('remote.commands');
-              if (!commands || typeof commands.execute !== 'function') throw new Error(t('unavailable'));
-              const response = await commands.execute({ agentId: sessionId, line: '/continue-session ' + JSON.stringify({ expectedTurn: view.turn }), submittedAttachments: [] });
-              if (!response || response.ok !== true) throw new Error(response?.error?.message ?? t('failed'));
-              if (!response.value) throw new Error(t('unavailable'));
-              if (response.value.result?.kind === 'error') throw new Error(response.value.result.text ?? t('failed'));
+              await submitRecovery(ctx.get('remote.commands'), sessionId, view.turn, t);
             } catch (cause) {
               if (mounted.current) setError(cause instanceof Error ? cause.message : String(cause));
             } finally {

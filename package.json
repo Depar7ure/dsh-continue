@@ -1,6 +1,6 @@
 {
   "name": "@local/continue-plugin",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "type": "module",
   "description": "Continue interrupted Harness conversations from the composer.",

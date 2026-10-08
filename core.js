@@ -72,7 +72,7 @@ export class ContinueOperation {
       if (replay && !state.lastUser) return failure('no-user-input', '没有可重试的用户输入 / No user input is available to retry.');
       const content = replay ? structuredClone(state.lastUser.content) : [{ type: 'text', text: this.config.continuePrompt }];
       if (!content?.length) return failure('no-user-input', '用户输入为空 / User input is empty.');
-      agent.followup(this.createMessage({ content, source: { kind: 'plugin', plugin: '@local/continue-plugin' } }));
+      agent.followup(this.createMessage({ content, source: { kind: 'plugin:@local/continue-plugin' } }));
       return { ok: true, action: replay ? 'retry' : 'continue', turn: state.view.turn, message: '已提交恢复请求 / Recovery submitted.' };
     } catch (error) {
       return failure('recovery-failed', error instanceof Error ? error.message : String(error));

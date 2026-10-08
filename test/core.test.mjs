@@ -50,7 +50,7 @@ test('default continue submits exactly one plugin message and rejects next click
   const f = fixture();
   assert.equal((await f.operation.continueSession({ sessionId: 's1' })).action, 'continue');
   assert.equal(f.sent.length, 1);
-  assert.equal(f.sent[0].source.kind, 'plugin');
+  assert.equal(f.sent[0].source.kind, 'plugin:@local/continue-plugin');
   assert.equal((await f.operation.continueSession({ sessionId: 's1' })).code, 'busy');
 });
 test('retry copies original multimodal input without reusing message identity', async () => {
@@ -118,4 +118,20 @@ test('command and tool invoke same service and return equivalent outcomes', asyn
   assert.equal(tool.result.ok, true);
   assert.equal(command.result.text, tool.result.message);
   assert.deepEqual(command.f.sent, tool.f.sent);
+});
+test('submitted messages carry a producer-owned source kind accepted by format v4', async () => {
+  // format v4 rejects `source.kind === 'plugin'` and empty kinds; third-party
+  // producers use `plugin:<package>`.
+  for (const action of ['continue', 'retry', 'auto']) {
+    const f = fixture();
+    const result = await f.operation.continueSession({ sessionId: 's1', action });
+    assert.equal(result.ok, true, action);
+    assert.equal(f.sent.length, 1, action);
+    const { kind } = f.sent[0].source;
+    assert.equal(typeof kind, 'string', action);
+    assert.notEqual(kind, '', action);
+    assert.notEqual(kind, 'plugin', action);
+    assert.equal(kind, 'plugin:@local/continue-plugin', action);
+    assert.equal(f.sent[0].source.plugin, undefined, action);
+  }
 });
